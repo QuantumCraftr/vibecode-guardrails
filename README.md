@@ -48,8 +48,28 @@ Or, after cloning this repo somewhere:
 
 The installer detects the stack (Node/Next.js, Python, generic), copies the
 scripts into `scripts/guardrails/`, drops a `pre-commit` hook, the CI workflow,
-an `AGENTS.md` block and a `guardrails.config.json` you can edit. It never
-overwrites an existing hook or `AGENTS.md` without telling you.
+an `AGENTS.md` block and a `guardrails.config.json` you can edit.
+
+**It is non-destructive by default.** It will not:
+
+- change `core.hooksPath` if you already set one (it tells you how to chain it),
+- overwrite a `pre-commit` hook it did not create (it writes
+  `pre-commit.guardrails` next to it instead),
+- overwrite an existing CI workflow or `guardrails.config.json`,
+- rewrite `AGENTS.md`; it only appends its block, and only if absent.
+
+Use `--force` to overwrite a hook or CI file it does not own.
+
+### Ghost mode (try it without committing anything)
+
+```sh
+/path/to/vibecode-guardrails/install.sh . --ghost
+```
+
+Ghost mode never touches a tracked file: it skips `AGENTS.md` and the CI file,
+and adds the toolkit to `.git/info/exclude` (local, never committed). Your
+`git status` stays clean. Ideal to evaluate the toolkit on a real project, or to
+keep a repo pristine while still running the checks locally.
 
 ## Run it by hand
 
