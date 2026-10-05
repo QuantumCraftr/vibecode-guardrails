@@ -1,0 +1,34 @@
+#!/usr/bin/env sh
+# Fast, blocking checks before every commit: secrets in the staged diff and a
+# high-severity dependency scan. Missing tools are a warning, never a hard block,
+# so a fresh clone is not stuck before installing anything.
+#
+# Enable once per checkout:
+#   git config core.hooksPath scripts/guardrails/hooks
+# or copy this file to .git/hooks/pre-commit and chmod +x.
+
+set -e
+
+echo "guardrails: pre-commit"
+
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --no-banner --redact
+else
+  echo "  warn: gitleaks not installed (see vibecode-guardrails/docs/tools.md)"
+fi
+
+if [ -f package-lock.json ] && command -v osv-scanner >/dev/null 2>&1; then
+  osv-scanner --lockfile=package-lock.json >/dev/null || {
+    echo "  fail: vulnerable dependency (run osv-scanner --lockfile=package-lock.json)"; exit 1; }
+elif [ -f package-lock.json ] && command -v npm >/dev/null 2>&1; then
+  npm audit --audit-level=high >/dev/null 2>&1 || {
+    echo "  fail: npm audit found a high/critical issue"; exit 1; }
+fi
+
+# Keep the project's own gates if they exist.
+if [ -f package.json ] && command -v npm >/dev/null 2>&1; then
+  if npm run | grep -qE '^\s+test' 2>/dev/null; then npm test --silent || exit 1; fi
+  if [ -f tsconfig.json ]; then npx tsc --noEmit || exit 1; fi
+fi
+
+echo "guardrails: pre-commit ok"

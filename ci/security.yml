@@ -1,0 +1,50 @@
+# Copy to .github/workflows/security.yml in your project.
+# Runs the objective security gate on every push and PR. Make it a required
+# check on the default branch so it cannot be skipped by being in a hurry.
+name: security
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: osv-scanner
+        run: |
+          if [ -f package-lock.json ]; then
+            docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:latest \
+              --lockfile=/src/package-lock.json || true
+          fi
+
+  sast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: returntocorp/semgrep-action@v1
+        with:
+          config: auto
+        env:
+          SEMGREP_SEND_METRICS: "off"

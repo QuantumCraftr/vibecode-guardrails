@@ -1,0 +1,20 @@
+{
+  "security": {
+    "auditOnCommit": true,
+    "blockingSeverity": "high",
+    "mailProviders": ["resend", "sendgrid", "nodemailer", "mailgun", "postmark"]
+  },
+  "production": {
+    "indexable": true,
+    "requireRobots": true,
+    "requireSitemap": true,
+    "requireLlmsTxt": true,
+    "requireSecurityHeaders": true,
+    "requireCaptchaOnForms": true,
+    "requireRateLimitOnForms": true
+  },
+  "agents": {
+    "immutablePaths": ["scripts/guardrails", ".github/workflows/security.yml", ".githooks"],
+    "requirePreflightBeforeDeploy": true
+  }
+}
